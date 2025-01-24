@@ -1,101 +1,158 @@
-import Image from "next/image";
+'use client';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User } from 'lucide-react';
 
-export default function Home() {
+type Message = {
+  id: string;
+  content: string;
+  role: 'assistant' | 'user';
+  createdAt: Date;
+};
+
+const ChatInterface = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: input,
+      role: 'user',
+      createdAt: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: input,
+          threadId: threadId 
+        }),
+      });
+
+      const data = await response.json();
+      if (data.threadId) {
+        setThreadId(data.threadId);
+      }
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.message,
+        role: 'assistant',
+        createdAt: new Date(),
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: 'Sorry, there was an error processing your request.',
+        role: 'assistant',
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Optional: Save thread ID to localStorage to persist conversations
+  useEffect(() => {
+    if (threadId) {
+      localStorage.setItem('chatThreadId', threadId);
+    }
+  }, [threadId]);
+
+  // Optional: Load thread ID from localStorage on component mount
+  useEffect(() => {
+    const savedThreadId = localStorage.getItem('chatThreadId');
+    if (savedThreadId) {
+      setThreadId(savedThreadId);
+    }
+  }, []);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="flex flex-col h-screen max-w-2xl mx-auto p-4 bg-gray-50">
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex items-start space-x-2 animate-fadeIn ${
+              message.role === 'assistant' ? 'justify-start' : 'justify-end'
+            }`}
+          >
+            {message.role === 'assistant' && (
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+            )}
+            <div
+              className={`max-w-[70%] p-3 rounded-lg ${
+                message.role === 'assistant'
+                  ? 'bg-white shadow-sm'
+                  : 'bg-blue-500 text-white'
+              }`}
+            >
+              {message.content}
+            </div>
+            {message.role === 'user' && (
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
+              </div>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100" />
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200" />
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      {/* Input Form */}
+      <form onSubmit={handleSubmit} className="flex space-x-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your message..."
+          className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <Send className="w-5 h-5" />
+        </button>
+      </form>
     </div>
   );
-}
+};
+
+export default ChatInterface;
