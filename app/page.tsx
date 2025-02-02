@@ -5,26 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircleMore, SendHorizonal, UserRound } from 'lucide-react';
 import CyrillicToTranslit from 'cyrillic-to-translit-js';
 
-type Message = {
-  id: string;
-  content: string;
-  role: 'assistant' | 'user';
-  createdAt: Date;
-};
-
-const formatResponse = (content: string) => {
-  const cleanContent = content.replace(/【.*?†.*?】/g, '');
-  const formattedContent = cleanContent
-    .replace(/(\d+\.\s)/g, '\n$1')
-    .replace(/\n\n+/g, '\n');
-  return formattedContent.trim();
-};
-
-const isCyrillic = (text: string) => {
-  const cyrillicRegex = /[\u0400-\u04FF]/;
-  return cyrillicRegex.test(text);
-};
-
 const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -48,7 +28,7 @@ const ChatInterface = () => {
     return CyrillicToTranslit({ preset: 'mn' }).transform(input);
   };
 
-  const fetchWithRetry = async (body: any, retries = 3) => {
+  const fetchWithRetry = async (body: FetchBody, retries = 3) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
@@ -253,3 +233,28 @@ const ChatInterface = () => {
 };
 
 export default ChatInterface;
+
+type FetchBody = {
+  message: string;
+  threadId: string | null;
+};
+
+type Message = {
+  id: string;
+  content: string;
+  role: 'assistant' | 'user';
+  createdAt: Date;
+};
+
+const formatResponse = (content: string) => {
+  const cleanContent = content.replace(/【.*?†.*?】/g, '');
+  const formattedContent = cleanContent
+    .replace(/(\d+\.\s)/g, '\n$1')
+    .replace(/\n\n+/g, '\n');
+  return formattedContent.trim();
+};
+
+const isCyrillic = (text: string) => {
+  const cyrillicRegex = /[\u0400-\u04FF]/;
+  return cyrillicRegex.test(text);
+};
