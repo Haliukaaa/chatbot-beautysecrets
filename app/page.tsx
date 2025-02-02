@@ -17,7 +17,6 @@ const formatResponse = (content: string) => {
   const formattedContent = cleanContent
     .replace(/(\d+\.\s)/g, '\n$1')
     .replace(/\n\n+/g, '\n');
-  
   return formattedContent.trim();
 };
 
@@ -46,7 +45,30 @@ const ChatInterface = () => {
     if (isCyrillic(input)) {
       return input;
     }
-    return CyrillicToTranslit({preset: "mn"}).transform(input);
+    return CyrillicToTranslit({ preset: 'mn' }).transform(input);
+  };
+
+  const fetchWithRetry = async (body: any, retries = 3) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+        return fetchWithRetry(body, retries - 1);
+      }
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,26 +84,21 @@ const ChatInterface = () => {
       createdAt: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          message: processedInput,
-          threadId: threadId 
-        }),
+      const response = await fetchWithRetry({
+        message: processedInput,
+        threadId: threadId,
       });
 
       const data = await response.json();
       if (data.threadId) {
         setThreadId(data.threadId);
       }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: formatResponse(data.message),
@@ -89,7 +106,7 @@ const ChatInterface = () => {
         createdAt: new Date(),
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
       const errorMessage: Message = {
@@ -98,7 +115,7 @@ const ChatInterface = () => {
         role: 'assistant',
         createdAt: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -119,51 +136,41 @@ const ChatInterface = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {/* Chat Toggle Buttons Container */}
-      <motion.div 
+      <motion.div
         className="flex space-x-2"
-        animate={{ 
+        animate={{
           y: [0, -10, 0],
-          transition: { 
-            duration: 1.5, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }
+          transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
         }}
       >
-
-        {/* Chat Toggle Button */}
-        <motion.button 
+        <motion.button
           onClick={() => setIsChatOpen(!isChatOpen)}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="w-12 h-12 bg-[#ffe7e3] rounded-full flex items-center justify-center 
-            shadow-lg transition-all duration-300 ease-in-out"
+          className="w-12 h-12 bg-[#ffe7e3] rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-in-out"
         >
-          <MessageCircleMore className='stroke-1'/>
+          <MessageCircleMore className="stroke-1" />
         </motion.button>
       </motion.div>
 
-      {/* Chat Interface */}
       <AnimatePresence>
         {isChatOpen && (
-          <motion.div 
+          <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="absolute bottom-16 right-0 w-[300px] md:w-[350px] bg-[#ffe7e3] rounded-lg shadow-xl border border-gray-200"
           >
-            {/* Messages Container */}
             <div className="h-[400px] overflow-y-auto p-4 space-y-4 bg-white rounded-t-lg">
               {messages.length === 0 && (
-                <div className='text-[#ffa08e] text-center'>
+                <div className="text-[#ffa08e] text-center">
                   Та Beauty Secrets-ийн талаар асуух зүйлээ бичнэ үү...
                 </div>
               )}
               {messages.map((message) => (
-                <motion.div 
-                  key={message.id} 
+                <motion.div
+                  key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
@@ -173,18 +180,12 @@ const ChatInterface = () => {
                 >
                   {message.role === 'assistant' && (
                     <div className="w-8 h-8 rounded-full bg-[#ffe7e3] flex items-center justify-center">
-                      <img 
-                        src="https://beautysecrets.mn/logo.svg" 
-                        alt="Assistant" 
+                      <img
+                        src="https://beautysecrets.mn/logo.svg"
+                        alt="Assistant"
                         className="w-6 h-6"
                       />
-                      {/* Speech Bubble Pointer for Assistant */}
-                      <div className="absolute top-4 left-10 w-0 h-0 
-                        border-t-8 border-t-transparent 
-                        border-b-8 border-b-transparent 
-                        border-r-8 border-r-gray-100 
-                        -ml-2 -mt-2"
-                      />
+                      <div className="absolute top-4 left-10 w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-8 border-r-gray-100 -ml-2 -mt-2" />
                     </div>
                   )}
                   <div
@@ -195,17 +196,13 @@ const ChatInterface = () => {
                     }`}
                   >
                     {message.role === 'assistant' ? (
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         components={{
-                          ol: ({...props}) => (
-                            <ol className="list-decimal pl-5" {...props} />
-                          ),
-                          ul: ({...props}) => (
-                            <ul className="list-disc pl-5" {...props} />
-                          ),
-                          a: ({...props}) => (
+                          ol: ({ ...props }) => <ol className="list-decimal pl-5" {...props} />,
+                          ul: ({ ...props }) => <ul className="list-disc pl-5" {...props} />,
+                          a: ({ ...props }) => (
                             <a className="text-blue-600 underline" {...props} />
-                          )
+                          ),
                         }}
                       >
                         {message.content}
@@ -213,14 +210,8 @@ const ChatInterface = () => {
                     ) : (
                       message.content
                     )}
-                    {/* Speech Bubble Pointer for User */}
                     {message.role === 'user' && (
-                      <div className="absolute top-4 right-full w-0 h-0 
-                        border-t-8 border-t-transparent 
-                        border-b-8 border-b-transparent 
-                        border-l-8 border-l-[#ffa08e] 
-                        -mr-2 -mt-2"
-                      />
+                      <div className="absolute top-4 right-full w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-l-8 border-l-[#ffa08e] -mr-2 -mt-2" />
                     )}
                   </div>
                   {message.role === 'user' && (
@@ -232,15 +223,12 @@ const ChatInterface = () => {
               ))}
               {isLoading && (
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-500" />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-1000" />
+                  <div className="loading loading-dots" />
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
             <form onSubmit={handleSubmit} className="flex p-2 space-x-2 bg-[#ffe7e3] rounded-b-lg">
               <input
                 type="text"
