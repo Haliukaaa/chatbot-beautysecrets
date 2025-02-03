@@ -6,34 +6,6 @@ import { MessageCircleMore, SendHorizonal, X } from 'lucide-react';
 import CyrillicToTranslit from 'cyrillic-to-translit-js';
 import { useOnClickOutside } from 'usehooks-ts';
 
-type Message = {
-  id: string;
-  content: string;
-  role: 'assistant' | 'user';
-  createdAt: Date;
-};
-
-const COLORS = {
-  primary: '#FFE7E3',   
-  secondary: '#F8D7D1',
-  accent: '#FF7E67',
-  background: '#FFFCFA',
-  text: '#554D4B',
-  glass: 'rgba(255, 252, 250, 0.95)',
-  assistantBg: '#FBF3F0'
-};
-import './globals.css';
-
-const formatResponse = (content: string) => {
-  const cleanContent = content.replace(/【.*?†.*?】/g, '');
-  return cleanContent
-    .replace(/(\d+\.\s)/g, '\n$1')
-    .replace(/\n\n+/g, '\n')
-    .trim();
-};
-
-const isCyrillic = (text: string) => /[\u0400-\u04FF]/.test(text);
-
 const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -179,10 +151,10 @@ const ChatInterface = () => {
                 <img
                   src="https://beautysecrets.mn/logo.svg"
                   alt="Logo"
-                  className="w-8 h-8 rounded-full"
+                  className="w-8 h-8 rounded-full object-contain"
                 />
                 <h2 className="font-semibold" style={{ color: COLORS.text }}>
-                  Beauty Assistant
+                  Beauty Secrets Assistant
                 </h2>
               </div>
               <button
@@ -288,27 +260,27 @@ const ChatInterface = () => {
             >
               <motion.div className="relative flex-1">
               <input
-  type="text"
-  value={input}
-  onChange={(e) => setInput(e.target.value)}
-  placeholder="Type your message..."
-  className="w-full p-3 text-sm rounded-xl pr-12 transition-all border focus:outline-none focus:ring-2 focus:ring-offset-2"
-  style={{
-    background: COLORS.background,
-    color: COLORS.text,
-    borderColor: COLORS.primary,
-  }}
-  onFocus={(e) => {
-    e.target.style.boxShadow = `0 0 0 3px ${COLORS.accent}33`;
-  }}
-  onBlur={(e) => {
-    e.target.style.boxShadow = '';
-  }}
-/>
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                className="w-full p-3 text-sm rounded-xl pr-12 transition-all border focus:outline-none focus:ring-2 focus:ring-offset-2"
+                style={{
+                  background: COLORS.background,
+                                color: COLORS.text,
+                  borderColor: COLORS.primary,
+                }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = `0 0 0 3px ${COLORS.accent}33`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = '';
+                }}
+              />
                 <motion.button
                   type="submit"
                   disabled={isLoading}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg disabled:opacity-50 transition-all"
+                  className="absolute right-2 top-1.5 p-2 rounded-lg disabled:opacity-50 transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   style={{
@@ -328,3 +300,31 @@ const ChatInterface = () => {
 };
 
 export default ChatInterface;
+
+type Message = {
+  id: string;
+  content: string;
+  role: 'assistant' | 'user';
+  createdAt: Date;
+};
+
+const COLORS = {
+  primary: '#FFE7E3',   
+  secondary: '#F8D7D1',
+  accent: '#FF7E67',
+  background: '#FFFCFA',
+  text: '#554D4B',
+  glass: 'rgba(255, 252, 250, 0.95)',
+  assistantBg: '#FBF3F0'
+};
+import './globals.css';
+
+const formatResponse = (content: string) => {
+  const cleanContent = content.replace(/【.*?†.*?】/g, '');
+  return cleanContent
+    .replace(/(\d+\.\s)/g, '\n$1')
+    .replace(/\n\n+/g, '\n')
+    .trim();
+};
+
+const isCyrillic = (text: string) => /[\u0400-\u04FF]/.test(text);
