@@ -1,23 +1,17 @@
-// app/api/chat/route.ts
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
-
-// Configure runtime
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-const ASSISTANT_ID = process.env.ASSISTANT_ID!; // Move to environment variable
+const ASSISTANT_ID = process.env.ASSISTANT_ID!;
 
 async function waitForRunCompletion(threadId: string, runId: string) {
   let runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
-  let attempts = 300;
-  
+  let attempts = 30; 
   while (attempts > 0 && (runStatus.status === 'queued' || runStatus.status === 'in_progress')) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000)); 
     runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
     attempts--;
 
@@ -44,7 +38,7 @@ export async function POST(req: Request) {
   try {
     const { message, threadId } = await req.json();
 
-    const thread = threadId 
+    const thread = threadId
       ? await openai.beta.threads.retrieve(threadId)
       : await openai.beta.threads.create();
 
@@ -65,7 +59,7 @@ export async function POST(req: Request) {
     });
 
     const lastMessage = messages.data[0];
-    
+
     if (!lastMessage || lastMessage.content.length === 0) {
       throw new Error('No response received');
     }
@@ -77,11 +71,10 @@ export async function POST(req: Request) {
       responseText = messageContent.text.value;
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: responseText,
-      threadId: thread.id
+      threadId: thread.id,
     });
-
   } catch (error) {
     console.error('OpenAI API error:', error);
     return NextResponse.json(
