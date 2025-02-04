@@ -37,16 +37,26 @@ export async function POST(req: Request) {
       order: 'desc'
     });
 
+    const lastMessage = messages.data[0];
+    const responseContent = lastMessage?.content.map(content => {
+      if ('text' in content) {
+        return content.text.value;
+      } else if ('image_file' in content) {
+        return `Image file: ${content.image_file.file_id}`;
+      }
+      return 'Unsupported content type';
+    }).join('\n');
+
     return NextResponse.json({
-      message: messages.data[0]?.content[0]?.text?.value || "No response",
+      message: responseContent || "No response",
       threadId: thread.id
     });
 
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 }
     );
-    console.error(error);
   }
 }
