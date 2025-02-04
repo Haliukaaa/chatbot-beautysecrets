@@ -15,7 +15,6 @@ const ChatInterface = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // Click outside handler
   useOnClickOutside(chatRef, () => setIsChatOpen(false));
 
   const scrollToBottom = () => {
@@ -45,30 +44,35 @@ const ChatInterface = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-
+  
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: processedInput, threadId }),
+        body: JSON.stringify({ message: input, threadId }),
       });
-
-      const data = await response.json();
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Request failed');
+      }
+  
+      const data: ApiResponse = await response.json();
       if (data.threadId) setThreadId(data.threadId);
-
+  
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: formatResponse(data.message),
         role: 'assistant',
         createdAt: new Date(),
       };
-
+  
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        content: 'Уучлаарай, таны хүсэлтийг биелүүлэхэд алдаа гарлаа. Та дахин оролдоно уу.',
+        content: error instanceof Error ? error.message : 'Уучлаарай, таны хүсэлтийг биелүүлэхэд алдаа гарлаа. Та дахин оролдоно уу.',
         role: 'assistant',
         createdAt: new Date(),
       }]);
@@ -77,7 +81,6 @@ const ChatInterface = () => {
     }
   };
 
-  // Persist thread ID
   useEffect(() => {
     if (threadId) localStorage.setItem('chatThreadId', threadId);
   }, [threadId]);
@@ -319,12 +322,20 @@ const COLORS = {
 };
 import './globals.css';
 
-const formatResponse = (content: string) => {
+const formatResponse = (content: string | undefined) => {
+  if (!content) return 'Хариулт алга байна. Дахин оролдоно уу.';
+  
   const cleanContent = content.replace(/【.*?†.*?】/g, '');
   return cleanContent
     .replace(/(\d+\.\s)/g, '\n$1')
     .replace(/\n\n+/g, '\n')
     .trim();
 };
+
+interface ApiResponse {
+  message?: string;
+  threadId?: string;
+  error?: string;
+}
 
 const isCyrillic = (text: string) => /[\u0400-\u04FF]/.test(text);
