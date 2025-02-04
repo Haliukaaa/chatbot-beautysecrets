@@ -47,5 +47,6 @@ export async function POST(req: Request) {
       { error: "Failed to process request" },
       { status: 500 }
     );
+    console.error(error);
   }
 }
