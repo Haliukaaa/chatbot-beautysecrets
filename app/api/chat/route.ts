@@ -41,8 +41,6 @@ export async function POST(req: Request) {
     const responseContent = lastMessage?.content.map(content => {
       if ('text' in content) {
         return content.text.value;
-      } else if ('image_file' in content) {
-        return `Image file: ${content.image_file.file_id}`;
       }
       return 'Unsupported content type';
     }).join('\n');
