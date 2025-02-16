@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BotMessageSquare, MessageCircleMore, SendHorizonal, X } from 'lucide-react';
+import { MessageCircleMore, SendHorizonal, X } from 'lucide-react';
 import CyrillicToTranslit from 'cyrillic-to-translit-js';
 import { useOnClickOutside } from 'usehooks-ts';
 
@@ -93,7 +93,7 @@ const ChatInterface = () => {
   return (
     <div className="fixed bottom-6 right-6 z-50" ref={chatRef}>
       {/* Floating Action Button */}
-      {!isChatOpen && (<motion.button
+      <motion.button
         onClick={() => setIsChatOpen(!isChatOpen)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
@@ -101,14 +101,25 @@ const ChatInterface = () => {
         style={{ backgroundColor: COLORS.secondary }}
       >
         <AnimatePresence mode="wait">
+          {isChatOpen ? (
+            <motion.div
+              key="close"
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+            >
+              <X className="text-white" size={24} />
+            </motion.div>
+          ) : (
             <motion.div
               key="chat"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
             >
-              <BotMessageSquare className="text-white" size={24} />
+              <MessageCircleMore className="text-white" size={24} />
             </motion.div>
+          )}
         </AnimatePresence>
         
         {/* Pulsing dot */}
@@ -119,7 +130,7 @@ const ChatInterface = () => {
             transition={{ repeat: Infinity, duration: 1.5 }}
           />
         )}
-      </motion.button>)}
+      </motion.button>
 
       {/* Chat Container */}
       <AnimatePresence>
@@ -129,7 +140,7 @@ const ChatInterface = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="absolute bottom-0 right-0 w-80 xl:w-96 rounded-2xl shadow-2xl backdrop-blur-lg"
+            className="absolute bottom-20 right-0 w-[320px] md:w-[350px] rounded-2xl shadow-2xl backdrop-blur-lg"
             style={{
               background: COLORS.glass,
               border: `1px solid ${COLORS.primary}`,
@@ -143,10 +154,10 @@ const ChatInterface = () => {
                 <img
                   src="https://beautysecrets.mn/logo.svg"
                   alt="Logo"
-                  className="w-8 h-8 object-contain"
+                  className="w-8 h-8 rounded-full object-contain"
                 />
                 <h2 className="font-semibold" style={{ color: COLORS.text }}>
-                  Чатбот туслах
+                  Beauty Secrets Assistant
                 </h2>
               </div>
               <button
@@ -158,7 +169,7 @@ const ChatInterface = () => {
             </div>
 
             {/* Messages Container */}
-            <div className="h-80 xl:h-96 p-4 overflow-y-auto space-y-4">
+            <div className="h-[400px] p-4 overflow-y-auto space-y-4">
               {messages.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -166,7 +177,7 @@ const ChatInterface = () => {
                   className="text-center pt-8 text-sm italic"
                   style={{ color: COLORS.accent }}
                 >
-                  Надаас Beauty Secrets-ийн талаар асуугаарай...
+                  Ask me about beauty secrets...
                 </motion.div>
               )}
 
