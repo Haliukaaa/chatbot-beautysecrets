@@ -12,9 +12,9 @@ const ASSISTANT_ID = process.env.ASSISTANT_ID!;
 async function waitForRunCompletion(threadId: string, runId: string) {
   let runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
   let attempts = 20;
-  
+
   while (attempts > 0 && (runStatus.status === 'queued' || runStatus.status === 'in_progress')) {
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     runStatus = await openai.beta.threads.runs.retrieve(threadId, runId);
     attempts--;
 
@@ -36,34 +36,23 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch (parseError) {
     console.error('JSON parsing error:', parseError);
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
   if (!process.env.OPENAI_API_KEY || !process.env.ASSISTANT_ID) {
-    return NextResponse.json(
-      { error: 'OpenAI API key or Assistant ID not configured' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'OpenAI API key or Assistant ID not configured' }, { status: 500 });
   }
 
   try {
     const { message, threadId } = body;
 
     if (!message) {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
     let thread;
     try {
-      thread = threadId 
-        ? await openai.beta.threads.retrieve(threadId).catch(() => null)
-        : null;
+      thread = threadId ? await openai.beta.threads.retrieve(threadId).catch(() => null) : null;
     } catch (retrieveError) {
       console.error('Thread retrieval error:', retrieveError);
     }
@@ -82,13 +71,9 @@ export async function POST(req: Request) {
 
     await waitForRunCompletion(thread.id, run.id);
 
-    const messages = await openai.beta.threads.messages.list(thread.id, {
-      limit: 1,
-      order: 'desc',
-    });
-
+    const messages = await openai.beta.threads.messages.list(thread.id, { limit: 1, order: 'desc' });
     const lastMessage = messages.data[0];
-    
+
     if (!lastMessage || lastMessage.content.length === 0) {
       throw new Error('No response received');
     }
@@ -100,20 +85,9 @@ export async function POST(req: Request) {
       responseText = messageContent.text.value;
     }
 
-    return NextResponse.json({ 
-      message: responseText,
-      threadId: thread.id
-    });
-
+    return NextResponse.json({ message: responseText, threadId: thread.id });
   } catch (error) {
     console.error('Full OpenAI API error:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'There was an error processing your request',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'There was an error processing your request' }, { status: 500 });
   }
 }
