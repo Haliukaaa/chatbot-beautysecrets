@@ -40,7 +40,7 @@ export const ChatMessage = ({ message }: ChatMessageProps) => (
                     {message.content}
                 </MemoizedReactMarkdown>
             ) : (
-                <div>message.content</div>
+                <div>{message.content}</div>
             )}
         </div>
     </motion.div>
