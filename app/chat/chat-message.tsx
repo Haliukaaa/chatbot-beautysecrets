@@ -33,13 +33,14 @@ export const ChatMessage = ({ message }: ChatMessageProps) => (
                         ol: ({ ...props }) => <ol className="list-decimal pl-8" {...props} />,
                         ul: ({ ...props }) => <ul className="list-disc pl-8" {...props} />,
                         a: ({ ...props }) => <a className="text-blue-600 underline" {...props} />,
+                        p: ({ ...props }) => <p className="mb-4" {...props} />
                     }}
                     className="prose-sm"
                 >
                     {message.content}
                 </MemoizedReactMarkdown>
             ) : (
-                message.content
+                <div>message.content</div>
             )}
         </div>
     </motion.div>
