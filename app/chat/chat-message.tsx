@@ -30,8 +30,8 @@ export const ChatMessage = ({ message }: ChatMessageProps) => (
             {message.role === 'assistant' ? (
                 <MemoizedReactMarkdown
                     components={{
-                        ol: ({ ...props }) => <ol className="list-decimal pl-8" {...props} />,
-                        ul: ({ ...props }) => <ul className="list-disc pl-8" {...props} />,
+                        ol: ({ ...props }) => <ol className="list-decimal pl-4" {...props} />,
+                        ul: ({ ...props }) => <ul className="list-disc pl-4" {...props} />,
                         a: ({ ...props }) => <a className="text-blue-600 underline" {...props} />,
                         p: ({ ...props }) => <p className="mb-4" {...props} />
                     }}
