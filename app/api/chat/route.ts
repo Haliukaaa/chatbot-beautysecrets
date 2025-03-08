@@ -55,7 +55,10 @@ export async function POST(req: Request) {
       try {
         thread = await openai.beta.threads.retrieve(threadId);
       } catch (error) {
-        console.warn("⚠️ Failed to retrieve thread. Creating a new one.", error);
+        console.warn(
+          "⚠️ Failed to retrieve thread. Creating a new one.",
+          error
+        );
       }
     }
 
@@ -95,8 +98,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: responseText, threadId: thread.id });
   } catch (error) {
     console.error("🚨 OpenAI API Error:", error);
+
     return NextResponse.json(
-      { error: "There was an error processing your request" },
+      {
+        error: "Internal Server Error",
+        details: error instanceof Error ? error.message : error,
+      },
       { status: 500 }
     );
   }
