@@ -120,7 +120,7 @@ const ChatInterface = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="absolute bottom-0 right-0 w-80 xl:w-96 rounded-2xl shadow-2xl backdrop-blur-lg"
+            className="absolute bottom-0 right-0 w-96 xl:[450px] rounded-2xl shadow-2xl backdrop-blur-lg"
             style={{
               background: COLORS.glass,
               border: `1px solid ${COLORS.primary}`,
